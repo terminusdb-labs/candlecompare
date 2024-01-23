@@ -1,7 +1,7 @@
 mod vecmath;
 use std::{hint, time::SystemTime};
 
-use candle_core::{Device, Tensor};
+use candle_core::{DType, Device, Tensor};
 use rand::{rngs::StdRng, Rng, SeedableRng};
 use vecmath::Embedding;
 
@@ -35,7 +35,11 @@ fn tensor_compare(device: &Device, v1: &Embedding, v2: &Embedding) -> f32 {
 }
 
 fn multi_tensor_compare(device: &Device, query: &Embedding, others: &[Embedding]) -> Vec<f32> {
-    let loaded = Tensor::from_iter(others.iter().flat_map(|e| e.iter().copied()), device).unwrap();
+    let raw_ptr = others.as_ptr();
+    let raw_slice =
+        unsafe { std::slice::from_raw_parts(raw_ptr as *const u8, std::mem::size_of_val(others)) };
+    let loaded =
+        Tensor::from_raw_buffer(raw_slice, DType::F32, &[others.len() * 1536], device).unwrap();
     let tensor1 = loaded.reshape((others.len(), 1536)).unwrap();
     let tensor2 = Tensor::new(query, device)
         .unwrap()
