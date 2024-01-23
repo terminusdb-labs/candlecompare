@@ -3,6 +3,12 @@
 version = 3
 
 [[package]]
+name = "aligned_box"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a6c02eb4487576701e32cd97862dc83d81a0d437e71da9a225e9879957465487"
+
+[[package]]
 name = "autocfg"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -70,7 +76,9 @@ dependencies = [
 name = "candlecompare"
 version = "0.1.0"
 dependencies = [
+ "aligned_box",
  "candle-core",
+ "packed_simd",
  "rand",
 ]
 
@@ -366,6 +374,16 @@ name = "once_cell"
 version = "1.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3fdb12b2476b595f9358c5161aa467c2438859caa136dec86c26fdd2efe17b92"
+
+[[package]]
+name = "packed_simd"
+version = "0.3.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1f9f08af0c877571712e2e3e686ad79efad9657dbf0f7c3c8ba943ff6c38932d"
+dependencies = [
+ "cfg-if",
+ "num-traits",
+]
 
 [[package]]
 name = "paste"
