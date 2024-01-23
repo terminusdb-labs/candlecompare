@@ -1,5 +1,5 @@
 mod vecmath;
-use std::time::SystemTime;
+use std::{hint, time::SystemTime};
 
 use candle_core::{Device, Tensor};
 use rand::{rngs::StdRng, Rng, SeedableRng};
@@ -34,6 +34,27 @@ fn tensor_compare(device: &Device, v1: &Embedding, v2: &Embedding) -> f32 {
     scalar.to_scalar().unwrap()
 }
 
+fn multi_tensor_compare(device: &Device, query: &Embedding, others: &[Embedding]) -> Vec<f32> {
+    let loaded = Tensor::from_iter(others.iter().flat_map(|e| e.iter().copied()), device).unwrap();
+    let tensor1 = loaded.reshape((others.len(), 1536)).unwrap();
+    let tensor2 = Tensor::new(query, device)
+        .unwrap()
+        .reshape((1536, 1))
+        .unwrap();
+
+    let result = tensor1.matmul(&tensor2).unwrap();
+    let result = result
+        .broadcast_sub(&Tensor::new(1.0f32, device).unwrap())
+        .unwrap();
+    let result = result
+        .broadcast_div(&Tensor::new(-2.0f32, device).unwrap())
+        .unwrap()
+        .reshape(others.len())
+        .unwrap();
+
+    result.to_vec1().unwrap()
+}
+
 fn main() {
     let device = Device::Cpu;
     let mut rng = StdRng::seed_from_u64(42);
@@ -43,15 +64,22 @@ fn main() {
 
     let now = SystemTime::now();
     for vec in data.iter() {
-        cpu_compare(&query, vec);
+        hint::black_box(cpu_compare(&query, vec));
     }
     let cpu_duration = now.elapsed().unwrap().as_millis();
-    eprintln!("cpu duration: {cpu_duration}");
+    println!("cpu duration: {cpu_duration}");
 
+    let now = SystemTime::now();
+    hint::black_box(multi_tensor_compare(&device, &query, &data));
+    let tensor_duration = now.elapsed().unwrap().as_millis();
+    println!("tensor duration: {tensor_duration}");
+
+    /*
     let now = SystemTime::now();
     for vec in data.iter() {
         tensor_compare(&device, &query, vec);
     }
     let tensor_duration = now.elapsed().unwrap().as_millis();
     eprintln!("tensor duration: {tensor_duration}");
+    */
 }
