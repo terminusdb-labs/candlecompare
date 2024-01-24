@@ -66,7 +66,7 @@ fn multi_tensor_compare(device: &Device, query: &Embedding, others: &[Embedding]
         .reshape(others.len())
         .unwrap();
     let elapsed = now.elapsed().unwrap();
-    eprintln!("matmul time: {}", elapsed.as_millis());
+    eprintln!("broadcast time: {}", elapsed.as_millis());
 
     let now = SystemTime::now();
     let final_result = result.to_vec1().unwrap();
