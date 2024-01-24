@@ -38,15 +38,25 @@ fn multi_tensor_compare(device: &Device, query: &Embedding, others: &[Embedding]
     let raw_ptr = others.as_ptr();
     let raw_slice =
         unsafe { std::slice::from_raw_parts(raw_ptr as *const u8, std::mem::size_of_val(others)) };
+    let now = SystemTime::now();
     let loaded =
         Tensor::from_raw_buffer(raw_slice, DType::F32, &[others.len() * 1536], device).unwrap();
+    let elapsed = now.elapsed().unwrap();
+    eprintln!("load time: {}", elapsed.as_millis());
+    let now = SystemTime::now();
     let tensor1 = loaded.reshape((others.len(), 1536)).unwrap();
+    let elapsed = now.elapsed().unwrap();
+    eprintln!("reshape time: {}", elapsed.as_millis());
     let tensor2 = Tensor::new(query, device)
         .unwrap()
         .reshape((1536, 1))
         .unwrap();
 
+    let now = SystemTime::now();
     let result = tensor1.matmul(&tensor2).unwrap();
+    let elapsed = now.elapsed().unwrap();
+    eprintln!("matmul time: {}", elapsed.as_millis());
+    let now = SystemTime::now();
     let result = result
         .broadcast_sub(&Tensor::new(1.0f32, device).unwrap())
         .unwrap();
@@ -55,8 +65,15 @@ fn multi_tensor_compare(device: &Device, query: &Embedding, others: &[Embedding]
         .unwrap()
         .reshape(others.len())
         .unwrap();
+    let elapsed = now.elapsed().unwrap();
+    eprintln!("matmul time: {}", elapsed.as_millis());
 
-    result.to_vec1().unwrap()
+    let now = SystemTime::now();
+    let final_result = result.to_vec1().unwrap();
+    let elapsed = now.elapsed().unwrap();
+    eprintln!("extract final result time: {}", elapsed.as_millis());
+
+    final_result
 }
 
 fn main() {
